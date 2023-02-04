@@ -15,14 +15,7 @@ class Collection(models.Model):
     related_name='+') # This name makes django don't create the reverse-relationship
 class Product(models.Model):
     #sku = models.CharField(max_length=10, primary_key=True) #Esto crea una llave primaria
-    MEMBERSHIP_BRONZE ='B'
-    MEMBERSHIP_SILVER = 'S'
-    MEMBERSHIP_GOLD = 'G'
-    MEMBERSHIP_CHOICES= [
-        (MEMBERSHIP_BRONZE, 'BronZe'),
-        (MEMBERSHIP_SILVER, 'Silver') ,
-        (MEMBERSHIP_GOLD, 'Gold'),
-    ]
+    
 
     slug = models.SlugField()
     title = models.CharField(max_length=255) 
@@ -30,7 +23,7 @@ class Product(models.Model):
     unit_price = models.DecimalField(max_digits=6, decimal_places=2)
     inventory = models.IntegerField()
     last_update = models.DateTimeField(auto_now=True) # auto_now_add ingrsa la fecha actual al momento de añadir un producto solamente
-    memberchip = models.CharField(max_length=1, choices=MEMBERSHIP_CHOICES, default=MEMBERSHIP_BRONZE)
+    
 
     # se coloca protecto así si se borra una colección no se borra los producto
     collection = models.ForeignKey(Collection, on_delete=models.PROTECT)
@@ -51,13 +44,21 @@ class Order(models.Model):
     #customer = models.ForeignKey('Customer', on_delete=models.PROTECT)
 
 class Customer(models.Model):
+    MEMBERSHIP_BRONZE ='B'
+    MEMBERSHIP_SILVER = 'S'
+    MEMBERSHIP_GOLD = 'G'
+    MEMBERSHIP_CHOICES= [
+        (MEMBERSHIP_BRONZE, 'BronZe'),
+        (MEMBERSHIP_SILVER, 'Silver') ,
+        (MEMBERSHIP_GOLD, 'Gold'),
+    ]
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=255)
     birth_date = models.DateField(null=True)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
-
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True)
+    membership = models.CharField(max_length=1, choices=MEMBERSHIP_CHOICES, default=MEMBERSHIP_BRONZE)
     
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.PROTECT)
