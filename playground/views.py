@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db.models.aggregates import Count, Max, Min, Avg, Sum
-from django.db.models import Q, F
+from django.db.models import Q, F,Value, ExpressionWrapper
 from store.models import Product, Customer, Collection, Order, OrderItem
 from django.core.exceptions import ObjectDoesNotExist
 # Create your views here.
@@ -30,7 +30,7 @@ def say_hello(request):
     # This gets the last 5 orders with their related products and curstomers
     #query_set = Order.objects.select_related('customer').prefetch_related('orderitem_set__product').order_by('-placed_at')[:5]
 
-    result = Product.objects.filter(collection__id = 1).aggregate(count = Count('id'), min_price = Min('unit_price'))
+    #result = Product.objects.filter(collection__id = 1).aggregate(count = Count('id'), min_price = Min('unit_price'))
 
 
     #customers_1 = Customer.objects.filter(email__icontains='.com')
@@ -54,7 +54,48 @@ def say_hello(request):
     #    print(product)
 
     # query set busca los productos solo cuando se utiliza
+
+    # This group the orders and retrrieves a column with the count of any customer
+    """ query_set = Customer.objects.annotate(
+        orders_count = Count('order')
+    ) """
+
+    # This calculate an expression with specific DecimalField 
+    """ discounted_price = ExpressionWrapper(F('unit_price')*0.8, output_field=DecimalField())
+    query_set = Product.objects.annotate(
+        discounted_price = discounted_price
+    ) """
+
+    # Excersices
+    # Point 1: get Customers with their last order ID
+    point_1 = Customer.objects.annotate(
+        last_order_id = Max('order__id')
+    )
+    # Point 2: Collections and count of their products
+    point_2 = Collection.objects.annotate(
+        count_products = Count('product__id')
+    )
+
+    #Point 3: Customers with more than 5 orders
+    point_3 = Customer.objects.annotate(
+        count_orders = Count('order')
+    ).filter(count_orders__gt=5)
+    #Point 4: Customers and the total amount they’ve spent
+    point_4 = Customer.objects.annotate(
+        total_spent = Sum(
+            F('order__orderitem__unit_price')*
+            F('order__orderitem__quantity')
+        )
+    )
+    #Point 5: Top 5 best-selling products and their total sales
+    point_5 = Product.objects.\
+        annotate(
+            total_sales = F('orderitem__unit_price')*F('orderitem__quantity')
+        )\
+        .order_by('-total_sales')[:5]
+
+
     return render(request, 'hello.html', {
         'name': 'David',
-        'result':point_4
+        'result':point_5
     })
