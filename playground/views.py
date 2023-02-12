@@ -4,6 +4,8 @@ from django.db.models.aggregates import Count, Max, Min, Avg, Sum
 from django.db.models import Q, F,Value, ExpressionWrapper
 from store.models import Product, Customer, Collection, Order, OrderItem
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.contenttypes.models import ContentType
+from tags.models import TaggedItem
 # Create your views here.
 
 def say_hello(request):
@@ -68,7 +70,7 @@ def say_hello(request):
 
     # Excersices
     # Point 1: get Customers with their last order ID
-    point_1 = Customer.objects.annotate(
+    """ point_1 = Customer.objects.annotate(
         last_order_id = Max('order__id')
     )
     # Point 2: Collections and count of their products
@@ -91,11 +93,17 @@ def say_hello(request):
     point_5 = Product.objects.\
         annotate(
             total_sales = F('orderitem__unit_price')*F('orderitem__quantity')
-        )\
-        .order_by('-total_sales')[:5]
+        ).order_by('-total_sales')[:5] """
 
+    #Query generic relationships
+
+    content_type = ContentType.objects.get_for_model(Product)
+    query_set = TaggedItem.objects.select_related('tag').filter(
+        content_type = content_type,
+        object_id = 1
+    )
 
     return render(request, 'hello.html', {
         'name': 'David',
-        'result':point_5
+        'result':list(query_set)
     })
