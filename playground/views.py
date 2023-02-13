@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.db.models.aggregates import Count, Max, Min, Avg, Sum
 from django.db.models import Q, F,Value, ExpressionWrapper
-from store.models import Product, Customer, Collection, Order, OrderItem
+from store.models import Product, Customer, Collection, Order, OrderItem, Cart, CartItem
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from tags.models import TaggedItem
@@ -82,7 +82,7 @@ def say_hello(request):
     point_3 = Customer.objects.annotate(
         count_orders = Count('order')
     ).filter(count_orders__gt=5)
-    #Point 4: Customers and the total amount they’ve spent
+    #Point 4: Customers and the total amount theyve spent
     point_4 = Customer.objects.annotate(
         total_spent = Sum(
             F('order__orderitem__unit_price')*
@@ -97,13 +97,51 @@ def say_hello(request):
 
     #Query generic relationships
 
-    content_type = ContentType.objects.get_for_model(Product)
+    """ content_type = ContentType.objects.get_for_model(Product)
     query_set = TaggedItem.objects.select_related('tag').filter(
         content_type = content_type,
         object_id = 1
-    )
+    ) """
+
+    # inserting, updating and deliting objects 
+    # Inserting
+    """ collection = Collection()
+    collection.title = 'Video Games'
+    collection.featured_product = Product(pk=11)
+    collection.save() """
+
+    # updating
+
+    """     collection = Collection.objects.filter(pk=11).update(featured_product = None)
+    """
+        #deleting
+
+    """ collection = Collection(pk=11)
+        collection.delete()
+
+        Collection.objects.filter(id__gt=5).delete() """
+    # Excersice 
+    # Point 1: Create a shopping cart with an item.
+
+    """ new_cart = Cart()
+    new_cart.save()
+    new_cart_item = CartItem()
+    new_cart_item.cart = new_cart
+    new_cart_item.quantity = 1
+    new_cart_item.product = Product.objects.get(pk = 1)
+    new_cart_item.save()
+ """
+    #point 2: Remove a shopping cart with its items 
+
+    """ cart = CartItem.objects.get(pk=1)
+    cart.delete() """
+
+
+
+
+
 
     return render(request, 'hello.html', {
         'name': 'David',
-        'result':list(query_set)
+        'result':list([1,2])
     })
