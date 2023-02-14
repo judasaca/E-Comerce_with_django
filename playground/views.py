@@ -6,8 +6,12 @@ from store.models import Product, Customer, Collection, Order, OrderItem, Cart, 
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from tags.models import TaggedItem
-# Create your views here.
 
+
+from django.db import transaction
+
+#This decorator can make a transaction
+#@transaction.atomic()
 def say_hello(request):
     #query_set = Product.objects.all() # -filter return a query set
     
@@ -135,6 +139,20 @@ def say_hello(request):
 
     """ cart = CartItem.objects.get(pk=1)
     cart.delete() """
+
+    """ order = Order()
+    order.customer_id = 1
+    order.save()
+
+    item = OrderItem()
+    item.order = order
+    item.product_id = 1
+    item.quantity = 1
+    item.unit_price=1
+    item.save() """
+
+    # This makes a transaction inside a function
+    #with transaction.atomic():
 
 
 
