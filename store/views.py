@@ -7,9 +7,10 @@ from rest_framework.views import APIView
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.viewsets import ModelViewSet
+from pprint import pprint
 
-from .models import OrderItem, Product, Collection
-from .serializers import ProductSerializer, CollectionSerializer
+from .models import OrderItem, Product, Collection, Review
+from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer
 # Create your views here.
 
 # If we want to dont allow moodification methods we can inherit this class from ReadOnlyModelViewSet.
@@ -34,6 +35,7 @@ class CollectionViewSet(ModelViewSet):
     def get_serializer_context(self):
         return {'request': self.request}
     
+    # VIews sets use destroy method instead of delete.
     def destroy(self, request, *args, **kwargs):
         if Product.objects.filter(collection_id = kwargs['pk']).count() > 0:
             return Response({
@@ -77,3 +79,15 @@ class CollectionViewSet(ModelViewSet):
 #         serializer.is_valid(raise_exception=True)
 #         serializer.save()
 #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ReviewViewSet(ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+
+    def get_serializer_context(self):
+        return {'product_id': self.kwargs['product_pk']}
+    
+    def get_queryset(self):
+
+        return Review.objects.filter(product_id = self.kwargs['product_pk'])
