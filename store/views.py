@@ -8,31 +8,42 @@ from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.viewsets import ModelViewSet
 
-from .models import Product, Collection
+from .models import OrderItem, Product, Collection
 from .serializers import ProductSerializer, CollectionSerializer
 # Create your views here.
 
-
-
-class ProductList(ListCreateAPIView):
-    queryset = Product.objects.all()
+# If we want to dont allow moodification methods we can inherit this class from ReadOnlyModelViewSet.
+class ProductViewSet(ModelViewSet):
+    queryset= Product.objects.all()
     serializer_class = ProductSerializer
-    
     def get_serializer_context(self):
         return {'request': self.request}
 
-    
-class ProductDetail(RetrieveUpdateDestroyAPIView):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-    
-    #This function can be customized.
-    def delete(self, request, pk):
-        product = get_object_or_404(Product, pk=pk)
-        if product.orderitem_set.count() > 0:
+    def destroy(self, request, *args, **kwargs):
+        if OrderItem.objects.filter(product_id = kwargs['pk']).count() >0:
             return Response({'error':'There are order items asociated with this product.'},status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        product.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return super().destroy(request, *args, **kwargs)
+    
+
+    
+    
+
+class CollectionViewSet(ModelViewSet):
+    queryset = Collection.objects.prefetch_related('product_set').all()
+    serializer_class = CollectionSerializer
+    def get_serializer_context(self):
+        return {'request': self.request}
+    
+    def destroy(self, request, *args, **kwargs):
+        if Product.objects.filter(collection_id = kwargs['pk']).count() > 0:
+            return Response({
+                'error': 'This collection has products associated.'
+            })
+        return super().destroy(request, *args, **kwargs)
+    
+
+    
+
 
 # @api_view(['GET', 'PUT', 'DELETE'])
 # def product_detail(request, id):
@@ -53,13 +64,6 @@ class ProductDetail(RetrieveUpdateDestroyAPIView):
 #         product.delete()
 #         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class CollectionList(ListCreateAPIView):
-    queryset = Collection.objects.prefetch_related('product_set').all()
-    serializer_class = CollectionSerializer
-    def get_serializer_context(self):
-        return {'request': self.request}
-
 # @api_view(['GET', 'POST'])
 # def collection_list(request):
 #     if request.method == 'GET':
@@ -73,20 +77,3 @@ class CollectionList(ListCreateAPIView):
 #         serializer.is_valid(raise_exception=True)
 #         serializer.save()
 #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-class CollectionDetail(RetrieveUpdateDestroyAPIView):
-    queryset= Collection.objects.all()
-    serializer_class = CollectionSerializer
-
-    def delete(self, request, pk):
-        collection = get_object_or_404(Collection, pk=pk)
-        if collection.product_set.count() >0:
-            return Response({
-                'error': 'This collection has products associated.'
-            })
-        collection.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-    
