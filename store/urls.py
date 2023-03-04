@@ -6,7 +6,7 @@ from pprint import pprint
 
 
 router = routers.DefaultRouter()
-router.register('products', views.ProductViewSet)
+router.register('products', views.ProductViewSet, basename='products')
 router.register('collections', views.CollectionViewSet)
 
 # Lookup indicates the parameter name that we are going to have in the 

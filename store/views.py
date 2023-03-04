@@ -7,7 +7,10 @@ from rest_framework.views import APIView
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.viewsets import ModelViewSet
+from django_filters.rest_framework import DjangoFilterBackend
 from pprint import pprint
+
+from store.filters import ProductFilter
 
 from .models import OrderItem, Product, Collection, Review
 from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer
@@ -15,8 +18,11 @@ from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializ
 
 # If we want to dont allow moodification methods we can inherit this class from ReadOnlyModelViewSet.
 class ProductViewSet(ModelViewSet):
-    queryset= Product.objects.all()
+    queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProductFilter
+    
     def get_serializer_context(self):
         return {'request': self.request}
 
@@ -24,6 +30,8 @@ class ProductViewSet(ModelViewSet):
         if OrderItem.objects.filter(product_id = kwargs['pk']).count() >0:
             return Response({'error':'There are order items asociated with this product.'},status=status.HTTP_405_METHOD_NOT_ALLOWED)
         return super().destroy(request, *args, **kwargs)
+    
+
     
 
     
