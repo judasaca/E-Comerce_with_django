@@ -62,9 +62,9 @@ class ProductAdmin(admin.ModelAdmin):
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ['first_name', 'last_name', 'membership', 'total_orders']
     list_editable = ['membership']
-    
+    list_select_related= ['user']
     list_per_page = 10
-    search_fields = ['first_name__istartswith', 'last_name__istartswith']
+    search_fields = ['user__first_name', 'user__last_name']
     @admin.display(ordering='total_orders')
     def total_orders(self, customer):
         url = (reverse('admin:store_order_changelist')
