@@ -8,7 +8,7 @@ from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyM
 from store.filters import ProductFilter
 
 from .models import Cart, CartItem, OrderItem, Product, Collection, Review
-from .serializers import CartItemSerializer, CartSerializer, ProductSerializer, CollectionSerializer, ReviewSerializer
+from .serializers import AddCartItemSerializer, CartItemSerializer, CartSerializer, ProductSerializer, CollectionSerializer, ReviewSerializer, UpdateCartItemSerializer
 # Create your views here.
 
 # If we want to dont allow moodification methods we can inherit this class from ReadOnlyModelViewSet.
@@ -40,8 +40,16 @@ class CartViewSet(CreateModelMixin,
         return {'request': self.request}
     
 class CartItemViewSet(ModelViewSet ):
-    
-    serializer_class = CartItemSerializer
+    # The method names muist be in lowercase
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    def get_serializer_class(self):
+        if self.request.method =='POST':
+            return AddCartItemSerializer
+        # This method is patch because it only updates a proporty of the object
+        elif self.request.method =='PATCH':
+            return UpdateCartItemSerializer
+        return CartItemSerializer
+        
 
     def get_serializer_context(self):
         return {'cart_id': self.kwargs['cart_pk']}
