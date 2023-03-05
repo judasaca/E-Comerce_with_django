@@ -1,14 +1,14 @@
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.pagination import PageNumberPagination
-
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, ListModelMixin
 from store.filters import ProductFilter
 
-from .models import OrderItem, Product, Collection, Review
-from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer
+from .models import Cart, CartItem, OrderItem, Product, Collection, Review
+from .serializers import CartItemSerializer, CartSerializer, ProductSerializer, CollectionSerializer, ReviewSerializer
 # Create your views here.
 
 # If we want to dont allow moodification methods we can inherit this class from ReadOnlyModelViewSet.
@@ -29,8 +29,25 @@ class ProductViewSet(ModelViewSet):
         return super().destroy(request, *args, **kwargs)
     
 
-    
+class CartViewSet(CreateModelMixin, 
+                  GenericViewSet, 
+                  RetrieveModelMixin, 
+                  DestroyModelMixin):
+    queryset=Cart.objects.prefetch_related('items__product').all()
+    serializer_class = CartSerializer
 
+    def get_serializer_context(self):
+        return {'request': self.request}
+    
+class CartItemViewSet(ModelViewSet ):
+    
+    serializer_class = CartItemSerializer
+
+    def get_serializer_context(self):
+        return {'cart_id': self.kwargs['cart_pk']}
+    
+    def get_queryset(self):
+        return CartItem.objects.select_related('product').filter(cart_id = self.kwargs['cart_pk'])
     
     
 
@@ -48,42 +65,6 @@ class CollectionViewSet(ModelViewSet):
             })
         return super().destroy(request, *args, **kwargs)
     
-
-    
-
-
-# @api_view(['GET', 'PUT', 'DELETE'])
-# def product_detail(request, id):
-#     product = get_object_or_404(Product, pk=id)
-#     if request.method == 'GET':
-#         serializer = ProductSerializer(product)
-#         return Response(serializer.data)
-
-#     elif request.method =='PUT':
-#         serializer = ProductSerializer(product, data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     elif request.method =='DELETE':
-#         if product.orderitem_set.count() > 0:
-#             return Response({'error':'There are order items asociated with this product.'},status=status.HTTP_405_METHOD_NOT_ALLOWED)
-#         product.delete()
-#         return Response(status=status.HTTP_204_NO_CONTENT)
-
-# @api_view(['GET', 'POST'])
-# def collection_list(request):
-#     if request.method == 'GET':
-#         query_set = Collection.objects.prefetch_related('product_set').all()
-#         serializer = CollectionSerializer(query_set, many=True, context={
-#             'request':request
-#         })
-#         return Response(serializer.data)
-#     if request.method == 'POST':
-#         serializer = CollectionSerializer(data = request.data)
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-#         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class ReviewViewSet(ModelViewSet):

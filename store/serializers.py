@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from decimal import Decimal
-from store.models import Product, Collection, Review
+from store.models import Cart, CartItem, Product, Collection, Review
 
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta: 
@@ -10,6 +10,9 @@ class CollectionSerializer(serializers.ModelSerializer):
     products_count = serializers.SerializerMethodField(method_name='count_products')
     def count_products(self, collection: Collection):
         return collection.product_set.count()
+    
+
+
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -68,7 +71,44 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ['id', 'date', 'name', 'description']
 
-        
+
     def create(self, validated_data):
         product_id = self.context['product_id']
         return Review.objects.create(product_id=product_id, **validated_data)
+
+
+
+
+class SimpleProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =Product
+        fields = ['id', 'title', 'unit_price' ]
+
+
+class CartItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CartItem
+        fields = ['id', 'product', 'quantity', 'total_price']
+    product = SimpleProductSerializer()
+    total_price = serializers.SerializerMethodField(method_name='get_total_price')
+    def get_total_price(self, cart_item: CartItem):
+        return cart_item.quantity * cart_item.product.unit_price
+
+    def create(self, validated_data):
+        cart_id = self.context['cart_id']
+        return CartItem.objects.create(cart_id = validated_data, **validated_data)
+
+class CartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ['id', 'created_at', 'items_count', 'items', 'total_price']
+        
+    items = CartItemSerializer(many=True, read_only=True)
+    total_price = serializers.SerializerMethodField(method_name='get_total_price')
+
+    def get_total_price(self, cart: Cart):
+        return sum([item.quantity*item.product.unit_price for item in cart.items.all()])
+    
+    items_count = serializers.SerializerMethodField(method_name='count_items')
+    def count_items(self, cart: Cart):
+        return cart.items.count()
