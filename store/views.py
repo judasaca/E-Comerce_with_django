@@ -6,9 +6,13 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, ListModelMixin, UpdateModelMixin
 from store.filters import ProductFilter
+from rest_framework.decorators import action
 
+from store.permissions import FullDjangoModelPermissions, IsAdminOrReadOnly, ViewCustomerPermission
 from .models import Cart, CartItem, Customer, OrderItem, Product, Collection, Review
 from .serializers import AddCartItemSerializer, CartItemSerializer, CartSerializer, CustomerSerializer, ProductSerializer, CollectionSerializer, ReviewSerializer, UpdateCartItemSerializer
+
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser, DjangoModelPermissions
 # Create your views here.
 
 # If we want to dont allow moodification methods we can inherit this class from ReadOnlyModelViewSet.
@@ -19,6 +23,9 @@ class ProductViewSet(ModelViewSet):
     filterset_class = ProductFilter
     search_fields = ['title', 'description']
     ordering_fields = ['unit_price', 'last_update']
+
+    permission_classes = [IsAdminOrReadOnly]
+
     #pagination_class = PageNumberPagination
     def get_serializer_context(self):
         return {'request': self.request}
@@ -62,6 +69,8 @@ class CartItemViewSet(ModelViewSet ):
 class CollectionViewSet(ModelViewSet):
     queryset = Collection.objects.prefetch_related('product_set').all()
     serializer_class = CollectionSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
     def get_serializer_context(self):
         return {'request': self.request}
     
@@ -87,6 +96,28 @@ class ReviewViewSet(ModelViewSet):
         return Review.objects.filter(product_id = self.kwargs['product_pk'])
     
 
-class CustomerViewSet(CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
+class CustomerViewSet(ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
+    permission_classes = [FullDjangoModelPermissions]
+
+    @action(detail=True, permission_classes=[ViewCustomerPermission])
+    def history(self, request, pk):
+        return Response('ok')
+    #This is an action
+    # Detail makes the action to be in customer/me
+    # If it is true then will be in customer/user_id/me
+    # Permission classes allow authenticated users to use the action
+    @action(detail = False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        # get_or_create return a tuple that means if the customer was created or not
+        customer, created = Customer.objects.get_or_create(user_id = request.user.id)
+        if request.method == 'GET':
+            serializer = CustomerSerializer(customer)
+            return Response(serializer.data)
+        elif request.method =='PUT':
+            serializer = CustomerSerializer(customer, data = request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+
