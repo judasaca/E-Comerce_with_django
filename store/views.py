@@ -9,10 +9,12 @@ from store.filters import ProductFilter
 from rest_framework.decorators import action
 
 from store.permissions import FullDjangoModelPermissions, IsAdminOrReadOnly, ViewCustomerPermission
-from .models import Cart, CartItem, Customer, OrderItem, Product, Collection, Review
-from .serializers import AddCartItemSerializer, CartItemSerializer, CartSerializer, CustomerSerializer, ProductSerializer, CollectionSerializer, ReviewSerializer, UpdateCartItemSerializer
+from .models import Cart, CartItem, Customer, Order, OrderItem, Product, Collection, Review
+from .serializers import AddCartItemSerializer, CartItemSerializer, CartSerializer, CreateOrderSerializer, CustomerSerializer, OrderItemSerializer, OrderSerializer, ProductSerializer, CollectionSerializer, ReviewSerializer, UpdateCartItemSerializer, UpdateOrderSerializer
 
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser, DjangoModelPermissions
+
+
 # Create your views here.
 
 # If we want to dont allow moodification methods we can inherit this class from ReadOnlyModelViewSet.
@@ -62,7 +64,8 @@ class CartItemViewSet(ModelViewSet ):
         return {'cart_id': self.kwargs['cart_pk']}
     
     def get_queryset(self):
-        return CartItem.objects.select_related('product').filter(cart_id = self.kwargs['cart_pk'])
+        return CartItem.objects.select_related('product')\
+            .filter(cart_id = self.kwargs['cart_pk'])
     
     
 
@@ -111,7 +114,7 @@ class CustomerViewSet(ModelViewSet):
     @action(detail = False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
     def me(self, request):
         # get_or_create return a tuple that means if the customer was created or not
-        customer, created = Customer.objects.get_or_create(user_id = request.user.id)
+        customer= Customer.objects.get(user_id = request.user.id)
         if request.method == 'GET':
             serializer = CustomerSerializer(customer)
             return Response(serializer.data)
@@ -120,4 +123,38 @@ class CustomerViewSet(ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
+
+class OrderViewSet(ModelViewSet):
+
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    def get_permissions(self):
+        # Only admin users can patch or delete an order
+        if self.request.method in ['PATCH', 'DELETE']:
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+
+    def create(self, request, *args, **kwargs):
+        serializer = CreateOrderSerializer(data = request.data, 
+                                           context = {'user_id': self.request.user.id})
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Order.objects.all()
+        customer_id = Customer.objects.only('id').get(user_id = user.id)
+        return Order.objects.filter(customer_id = customer_id)
+    
+    def get_serializer_context(self):
+        return {'user_id': self.request.user.id}
+    
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateOrderSerializer
+        elif self.request.method == 'PATCH':
+            return UpdateOrderSerializer
+        return OrderSerializer
 
