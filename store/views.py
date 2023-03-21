@@ -9,8 +9,8 @@ from store.filters import ProductFilter
 from rest_framework.decorators import action
 
 from store.permissions import FullDjangoModelPermissions, IsAdminOrReadOnly, ViewCustomerPermission
-from .models import Cart, CartItem, Customer, Order, OrderItem, Product, Collection, Review
-from .serializers import AddCartItemSerializer, CartItemSerializer, CartSerializer, CreateOrderSerializer, CustomerSerializer, OrderItemSerializer, OrderSerializer, ProductSerializer, CollectionSerializer, ReviewSerializer, UpdateCartItemSerializer, UpdateOrderSerializer
+from .models import Cart, CartItem, Customer, Order, OrderItem, Product, Collection, ProductImage, Review
+from .serializers import AddCartItemSerializer, CartItemSerializer, CartSerializer, CreateOrderSerializer, CustomerSerializer, OrderItemSerializer, OrderSerializer, ProductImageSerializer, ProductSerializer, CollectionSerializer, ReviewSerializer, UpdateCartItemSerializer, UpdateOrderSerializer
 
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser, DjangoModelPermissions
 
@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser, D
 
 # If we want to dont allow moodification methods we can inherit this class from ReadOnlyModelViewSet.
 class ProductViewSet(ModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.prefetch_related('images').all()
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ProductFilter
@@ -158,3 +158,9 @@ class OrderViewSet(ModelViewSet):
             return UpdateOrderSerializer
         return OrderSerializer
 
+class ProductImageViewSet(ModelViewSet):
+    serializer_class = ProductImageSerializer
+    def get_queryset(self):
+        return ProductImage.objects.filter(product_id = self.kwargs['product_pk'])
+    def get_serializer_context(self):
+        return {'product_id': self.kwargs['product_pk']}

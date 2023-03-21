@@ -16,7 +16,9 @@ router.register('orders', views.OrderViewSet, basename='orders')
 # Lookup indicates the parameter name product_pk
 products_router = routers.NestedDefaultRouter(router, 'products', lookup='product')
 #basename is just a prefix
-products_router.register('reviews', views.ReviewViewSet, basename='product-reviews')
+products_router.register('reviews', views.ReviewViewSet,
+                          basename='product-reviews')
+products_router.register('images', views.ProductImageViewSet, basename='product-images')
 
 #
 cart_router = routers.NestedDefaultRouter(router, 'carts', lookup='cart')

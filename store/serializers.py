@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from decimal import Decimal
-from .models import Cart, CartItem, Customer, Order, OrderItem, Product, Collection, Review
+from .models import Cart, CartItem, Customer, Order, OrderItem, Product, Collection, ProductImage, Review
 from django.db import transaction
 from .signals import order_created
 class CollectionSerializer(serializers.ModelSerializer):
@@ -14,13 +14,20 @@ class CollectionSerializer(serializers.ModelSerializer):
     
 
 
-
+class ProductImageSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        product_id = self.context['product_id']
+        return ProductImage.objects.create(product_id=product_id, **validated_data)
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image']
 
 class ProductSerializer(serializers.ModelSerializer):
     # This avoids the duplicated code.
+    images = ProductImageSerializer(many=True, read_only=True)
     class Meta:
         model = Product
-        fields = ['id', 'title', 'description','slug', 'inventory', 'unit_price', 'collection', 'price_with_tax']
+        fields = ['id', 'title', 'description','slug', 'inventory', 'unit_price', 'collection', 'price_with_tax', 'images']
 
         # This is a bad practice:
         # fields = '__all__'
@@ -216,3 +223,5 @@ class CreateOrderSerializer(serializers.Serializer):
             # self.__class__ class the class where is defined the function
             order_created.send_robust(sender=self.__class__, order = order)
             return order
+
+
