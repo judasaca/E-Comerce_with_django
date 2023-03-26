@@ -164,3 +164,14 @@ DJOSER = {
         'current_user': 'core.serializers.CurrentUserSerializer'
     }
 }
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_HOST_USER = ''
+# In production the password must be an environment variable.
+EMAIL_HOST_PASSWORD = ''
+EMAIL_PORT = 2525
+DEFAULT_FROM_EMAIL = 'from@user.com'
+
+ADMINS = [
+    ('Admin 1 Name', 'admin1@email.com')
+]

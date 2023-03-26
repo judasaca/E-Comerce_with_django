@@ -6,7 +6,8 @@ from store.models import Product, Customer, Collection, Order, OrderItem, Cart, 
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from tags.models import TaggedItem
-
+from django.core.mail import send_mail, mail_admins, BadHeaderError, EmailMessage
+from templated_mail.mail import BaseEmailMessage
 
 from django.db import transaction
 
@@ -155,10 +156,50 @@ def say_hello(request):
     #with transaction.atomic():
 
 
+    try:
+        # This function retrieves an error if an attacant modifies the header.
+        send_mail('subject', 'message', 'sender@receiver.com', ['receiver@email.com'])
+    except BadHeaderError: 
+        pass 
 
+    return render(request, 'hello.html', {
+        'name': 'David',
+        'result':list([1,2])
+    })
 
+def test_view_2(request):
+    try: 
+        mail_admins('subject', 'message', html_message='html message')
+    except BadHeaderError:
+        pass
+    return render(request, 'hello.html', {
+        'name': 'David',
+        'result':list([1,2])
+    })
 
+def atatch_files_to_emails(request):
+    try: 
+        message = EmailMessage('subject', 'message', 'sender@receiver.com', ['receiver@email.com'])
+        message.attach_file('playground/static/images/OIP.jpg')
+        message.send()
+    except BadHeaderError:
+        pass
+    return render(request, 'hello.html', {
+        'name': 'David',
+        'result':list([1,2])
+    })
 
+def use_templated_emails(request):
+    try: 
+        message = BaseEmailMessage(
+            template_name='emails/hello.html',
+            context={
+                'name': 'judasaca'
+            }
+        )
+        message.send(['receiver@email.com'])
+    except BadHeaderError:
+        pass
     return render(request, 'hello.html', {
         'name': 'David',
         'result':list([1,2])
