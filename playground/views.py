@@ -8,7 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from tags.models import TaggedItem
 from django.core.mail import send_mail, mail_admins, BadHeaderError, EmailMessage
 from templated_mail.mail import BaseEmailMessage
-
+from .tasks import notify_customers
 from django.db import transaction
 
 #This decorator can make a transaction
@@ -204,3 +204,7 @@ def use_templated_emails(request):
         'name': 'David',
         'result':list([1,2])
     })
+
+def send_email_to_all_customers(request):
+    notify_customers.delay('Hello')
+    return render(request, 'hello.html', {'name': 'Mosh'})
