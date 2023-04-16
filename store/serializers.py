@@ -10,7 +10,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     products_count = serializers.SerializerMethodField(method_name='count_products')
     def count_products(self, collection: Collection):
-        return collection.product_set.count()
+        return collection.products.count()
     
 
 
