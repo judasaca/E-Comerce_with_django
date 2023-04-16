@@ -70,7 +70,7 @@ class CartItemViewSet(ModelViewSet ):
     
 
 class CollectionViewSet(ModelViewSet):
-    queryset = Collection.objects.prefetch_related('product_set').all()
+    queryset = Collection.objects.prefetch_related('products').all()
     serializer_class = CollectionSerializer
     permission_classes = [IsAdminOrReadOnly]
 
