@@ -10,6 +10,9 @@ from django.core.mail import send_mail, mail_admins, BadHeaderError, EmailMessag
 from templated_mail.mail import BaseEmailMessage
 from .tasks import notify_customers
 from django.db import transaction
+from django.core.cache import cache
+from django.views.decorators.cache import cache_page
+import requests
 
 #This decorator can make a transaction
 #@transaction.atomic()
@@ -208,3 +211,15 @@ def use_templated_emails(request):
 def send_email_to_all_customers(request):
     notify_customers.delay('Hello')
     return render(request, 'hello.html', {'name': 'Mosh'})
+
+def slow_api_call(request):
+    key = 'httpbin_result'
+    if cache.get(key) is None:
+        
+        #This simulates slow api response
+        response = requests.get('https://httpbin.org/delay/2')
+        data = response.json()
+        # Save the response on cache
+        cache.set(key, data)
+    
+    return render(request, 'hello.html', {'name': cache.get(key)})

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django_filters',
     "rest_framework",
     'djoser',
+    'silk',
     'playground',
     'debug_toolbar',
     'store',
@@ -61,8 +62,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-
 ]
+if DEBUG:
+    MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
 INTERNAL_IPS = [
     # ...
     "127.0.0.1",
@@ -191,3 +193,13 @@ CELERY_BEAT_SCHEDULE = {
     }
 }
 #CELERY_BROCKER_TRANSPORT = 'redis://localhost:6379/1'
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/2",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
